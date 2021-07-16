@@ -8,7 +8,7 @@ from .models import Stats
 
 # Create your views here.
 class MatchList(APIView):
-    def get(self, request, format=None):
-        queryset = Stats.objects.all()[0:10]
+    def get(self, request, date, format=None):
+        queryset = Stats.objects.filter(date=date)
         serializer = StatsSerializer(queryset, many=True)
         return Response(serializer.data)

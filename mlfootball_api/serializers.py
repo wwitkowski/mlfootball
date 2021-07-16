@@ -5,6 +5,7 @@ class StatsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Stats
         fields = (
+            'id',
             'date',
             'league',
             'team1',
