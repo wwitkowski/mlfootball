@@ -192,6 +192,11 @@ class Stats(models.Model):
     matchday = models.FloatField(blank=True, null=True)
     matchday_away = models.FloatField(blank=True, null=True)
 
+
+    def __str__(self):
+        return f'{self.team1} v {self.team2} @ {self.date}'
+
+
     class Meta:
         managed = False
         db_table = 'stats'
