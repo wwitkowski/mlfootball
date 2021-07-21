@@ -1,9 +1,9 @@
 from rest_framework import serializers
-from .models import Stats
+from .models import Match
 
-class StatsSerializer(serializers.ModelSerializer):
+class MatchSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Stats
+        model = Match
         fields = (
             'id',
             'date',
@@ -15,27 +15,40 @@ class StatsSerializer(serializers.ModelSerializer):
         )
 
 
-class TeamSerializer(serializers.ModelSerializer):
-    num_matches = serializers.IntegerField()
-    points = serializers.IntegerField()
-    ''' 
-    scored = serializers.IntegerField()
-    conceded = serializers.IntegerField()
-    x_points = serializers.FloatField()
-    xg_scored = serializers.FloatField()
-    xg_conceded = serializers.FloatField()
-    '''
+class TeamStandingsSerializer(serializers.ModelSerializer):
+    name = serializers.CharField()
 
     class Meta:
-        model = Stats
+        model = Match
         fields = (
-            'league',
-            'team1',
-            'num_matches',
+            'name',
+        )
+
+
+class StatsStandingsSerializer(serializers.ModelSerializer):
+    played = serializers.IntegerField()
+    wins = serializers.IntegerField()
+    draws = serializers.IntegerField()
+    losses = serializers.IntegerField()
+    points = serializers.IntegerField()
+    scored = serializers.IntegerField()
+    conceded = serializers.IntegerField()
+    xpoints = serializers.FloatField()
+    xgscored = serializers.FloatField()
+    xgconceded = serializers.FloatField()
+
+
+    class Meta:
+        model = Match
+        fields = (
+            'played',
+            'wins',
+            'draws',
+            'losses',
             'points',
-            # 'scored',
-            # 'conceded',
-            # 'x_points',
-            # 'xg_scored',
-            # 'xg_conceded'
+            'scored',
+            'conceded',
+            'xpoints',
+            'xgscored',
+            'xgconceded',
         )
