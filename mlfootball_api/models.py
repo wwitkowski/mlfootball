@@ -122,7 +122,7 @@ class DjangoSession(models.Model):
         db_table = 'django_session'
 
 
-class Stats(models.Model):
+class Match(models.Model):
     id = models.IntegerField(primary_key=True)
     season = models.CharField(max_length=4, blank=True, null=True)
     date = models.DateField(blank=True, null=True)
@@ -191,12 +191,13 @@ class Stats(models.Model):
     cards2 = models.FloatField(blank=True, null=True)
     matchday = models.FloatField(blank=True, null=True)
     matchday_away = models.FloatField(blank=True, null=True)
-
-
-    def __str__(self):
-        return f'{self.team1} v {self.team2} @ {self.date}'
+    weight = models.FloatField(blank=True, null=True)
 
 
     class Meta:
         managed = False
-        db_table = 'stats'
+        db_table = 'matches'
+
+
+    def __str__(self):
+        return f'{self.team1} v {self.team2} on {self.date}'
