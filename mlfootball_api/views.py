@@ -9,7 +9,7 @@ from rest_framework import generics
 from .serializers import MatchSerializer, StatsStandingsSerializer, TeamStandingsSerializer
 from .models import Match
 
-from itertools import product
+from operator import itemgetter
 
 
 # Create your views here.
@@ -22,11 +22,10 @@ class MatchList(APIView):
 
 class Standings(APIView):
     def get(self, *args, **kwargs):
-
         result = list()
         teams_queryset = Match.objects.filter(league_id=self.kwargs['league_id'], season=self.kwargs['season']) \
             .values('team1') \
-            .annotate(name=F('team1'))
+            .annotate(name=F('team1')).distinct()
         home_stats_queryset = Match.objects.filter(league_id=self.kwargs['league_id'], season=self.kwargs['season']) \
             .values('team1') \
             .annotate(
@@ -75,31 +74,22 @@ class Standings(APIView):
                 xgconceded=Sum('xg1')
             )
         
-        # for team in teams_queryset:
-        #     for hteam_stats in home_stats_queryset:
-        #         for ateam_stats in away_stats_queryset:
-        #             if team['team1'] == hteam_stats['team1'] == ateam_stats['team2']:
-        #                 team_serializer = TeamStandingsSerializer(team)
-        #                 home_stats_serializer = StatsStandingsSerializer(hteam_stats)
-        #                 away_stats_serializer = StatsStandingsSerializer(ateam_stats)
-        #                 total_stats_serializer = StatsStandingsSerializer({k: hteam_stats.get(k, 0) + ateam_stats.get(k, 0) for k in set(hteam_stats) & set(ateam_stats)})
-        #                 result.append({'team': team_serializer.data, 
-        #                                'home': home_stats_serializer.data, 
-        #                                'away': away_stats_serializer.data,
-        #                                'total': total_stats_serializer.data})
+        for team in teams_queryset:
+            team_serializer = TeamStandingsSerializer(team)
+            team_name = team['team1']
+            hteam_stats = list(filter(lambda hteam: hteam['team1'] == team_name, list(home_stats_queryset)))[0]
+            ateam_stats = list(filter(lambda ateam: ateam['team2'] == team_name, list(away_stats_queryset)))[0]
+            home_stats_serializer = StatsStandingsSerializer(hteam_stats)
+            away_stats_serializer = StatsStandingsSerializer(ateam_stats)
+            total_stats_serializer = StatsStandingsSerializer({k: hteam_stats.get(k, 0) + ateam_stats.get(k, 0) for k in set(hteam_stats) & set(ateam_stats)})
+            result.append({'team': team_serializer.data, 
+                            'home': home_stats_serializer.data, 
+                            'away': away_stats_serializer.data,
+                            'total': total_stats_serializer.data
+                            })
 
-        product_stat_list = [product_stat for product_stat in product(teams_queryset, home_stats_queryset, away_stats_queryset) if product_stat[0]['name'] == product_stat[1]['team1'] == product_stat[2]['team2']]
-        for product_stat in product_stat_list:
-            #if product_stat[0]['name'] == product_stat[1]['team1'] == product_stat[2]['team2']:
-                team_serializer = TeamStandingsSerializer(product_stat[0])
-                home_stats_serializer = StatsStandingsSerializer(product_stat[1])
-                away_stats_serializer = StatsStandingsSerializer(product_stat[2])
-                total_stats_serializer = StatsStandingsSerializer({k: product_stat[1].get(k, 0) + product_stat[2].get(k, 0) for k in set(product_stat[1]) & set(product_stat[2])})
-                result.append({'team': team_serializer.data, 
-                                'home': home_stats_serializer.data, 
-                                'away': away_stats_serializer.data,
-                                'total': total_stats_serializer.data})
+        result_sorted = sorted(result, key=lambda e: e['total']['points'], reverse=True)
+        result_wrank = [dict(item, rank=i+1) for i, item in enumerate(result_sorted)]
 
-
-        return Response(result)
+        return Response(result_wrank)
 
