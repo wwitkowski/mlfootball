@@ -147,8 +147,8 @@ class Match(models.Model):
     nsxg2 = models.FloatField(blank=True, null=True)
     adj_score1 = models.FloatField(blank=True, null=True)
     adj_score2 = models.FloatField(blank=True, null=True)
-    hometeam = models.CharField(db_column='HomeTeam', max_length=24, blank=True, null=True)  # Field name made lowercase.
-    awayteam = models.CharField(db_column='AwayTeam', max_length=24, blank=True, null=True)  # Field name made lowercase.
+    hometeam_merged = models.CharField(max_length=24, blank=True, null=True)  # Field name made lowercase.
+    awayteam_merged = models.CharField(max_length=24, blank=True, null=True)  # Field name made lowercase.
     ftr = models.CharField(db_column='FTR', max_length=1, blank=True, null=True)  # Field name made lowercase.
     shots1 = models.FloatField(blank=True, null=True)
     shots2 = models.FloatField(blank=True, null=True)
@@ -168,16 +168,16 @@ class Match(models.Model):
     avgh = models.FloatField(db_column='AvgH', blank=True, null=True)  # Field name made lowercase.
     avgd = models.FloatField(db_column='AvgD', blank=True, null=True)  # Field name made lowercase.
     avga = models.FloatField(db_column='AvgA', blank=True, null=True)  # Field name made lowercase.
-    max_over25 = models.FloatField(db_column='Max_over25', blank=True, null=True)  # Field name made lowercase.
-    max_under25 = models.FloatField(db_column='Max_under25', blank=True, null=True)  # Field name made lowercase.
-    avg_over25 = models.FloatField(db_column='Avg_over25', blank=True, null=True)  # Field name made lowercase.
-    avg_under25 = models.FloatField(db_column='Avg_under25', blank=True, null=True)  # Field name made lowercase.
+    maxover = models.FloatField(blank=True, null=True)
+    maxunder = models.FloatField(blank=True, null=True)
+    avgover = models.FloatField(blank=True, null=True)
+    avgunder = models.FloatField(blank=True, null=True) 
     avg_xg1 = models.FloatField(blank=True, null=True)
     avg_xg2 = models.FloatField(blank=True, null=True)
     adj_avg_xg1 = models.FloatField(blank=True, null=True)
     adj_avg_xg2 = models.FloatField(blank=True, null=True)
-    pts1 = models.IntegerField(blank=True, null=True)
-    pts2 = models.IntegerField(blank=True, null=True)
+    pts1 = models.FloatField(blank=True, null=True)
+    pts2 = models.FloatField(blank=True, null=True)
     xwin1 = models.FloatField(blank=True, null=True)
     xdraw = models.FloatField(blank=True, null=True)
     xwin2 = models.FloatField(blank=True, null=True)
@@ -189,7 +189,7 @@ class Match(models.Model):
     convrate2 = models.FloatField(blank=True, null=True)
     cards1 = models.FloatField(blank=True, null=True)
     cards2 = models.FloatField(blank=True, null=True)
-    matchday = models.FloatField(blank=True, null=True)
+    matchday_home = models.FloatField(blank=True, null=True)
     matchday_away = models.FloatField(blank=True, null=True)
     weight = models.FloatField(blank=True, null=True)
 

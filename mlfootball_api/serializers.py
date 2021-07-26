@@ -11,11 +11,44 @@ class MatchSerializer(serializers.ModelSerializer):
             'team1',
             'team2',
             'score1',
-            'score2'
+            'score2',
+            'ftr'
         )
 
 
-class TeamStandingsSerializer(serializers.ModelSerializer):
+class MatchStatsSeriazlier(serializers.ModelSerializer):
+    rating = serializers.FloatField()
+    importance = serializers.FloatField()
+    xg = serializers.FloatField()
+    nsxg = serializers.FloatField()
+    shots = serializers.FloatField()
+    shots_ot = serializers.FloatField()
+    corners = serializers.FloatField()
+    fouls = serializers.FloatField()
+    yellow = serializers.FloatField()
+    red = serializers.FloatField()
+    xpts = serializers.FloatField()
+    xg_shot = serializers.FloatField()
+
+    class Meta:
+        model = Match
+        fields = (
+            'rating',
+            'importance',
+            'xg',
+            'nsxg',
+            'shots',
+            'shots_ot',
+            'corners',
+            'fouls',
+            'yellow',
+            'red',
+            'xpts',
+            'xg_shot'
+        )
+
+
+class TeamSerializer(serializers.ModelSerializer):
     name = serializers.CharField()
 
     class Meta:
@@ -37,7 +70,6 @@ class StatsStandingsSerializer(serializers.ModelSerializer):
     xgscored = serializers.FloatField()
     xgconceded = serializers.FloatField()
 
-
     class Meta:
         model = Match
         fields = (
@@ -45,6 +77,28 @@ class StatsStandingsSerializer(serializers.ModelSerializer):
             'wins',
             'draws',
             'losses',
+            'points',
+            'scored',
+            'conceded',
+            'xpoints',
+            'xgscored',
+            'xgconceded',
+        )
+
+
+class StatsSerializer(serializers.ModelSerializer):
+    played = serializers.IntegerField()
+    points = serializers.IntegerField()
+    scored = serializers.IntegerField()
+    conceded = serializers.IntegerField()
+    xpoints = serializers.FloatField()
+    xgscored = serializers.FloatField()
+    xgconceded = serializers.FloatField()
+
+    class Meta:
+        model = Match
+        fields = (
+            'played',
             'points',
             'scored',
             'conceded',
