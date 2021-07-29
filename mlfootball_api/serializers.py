@@ -86,7 +86,7 @@ class StatsStandingsSerializer(serializers.ModelSerializer):
         )
 
 
-class StatsSerializer(serializers.ModelSerializer):
+class StatsTotalSerializer(serializers.ModelSerializer):
     played = serializers.IntegerField()
     points = serializers.IntegerField()
     scored = serializers.IntegerField()
@@ -94,6 +94,24 @@ class StatsSerializer(serializers.ModelSerializer):
     xpoints = serializers.FloatField()
     xgscored = serializers.FloatField()
     xgconceded = serializers.FloatField()
+    nsxgscored = serializers.FloatField()
+    nsxgconceded = serializers.FloatField()
+    shots_scored = serializers.IntegerField()
+    shotsot_scored = serializers.IntegerField()
+    corners_scored = serializers.IntegerField()
+    fouls_scored = serializers.IntegerField()
+    yellow_scored = serializers.IntegerField()
+    red_scored = serializers.IntegerField()
+    # xgshot_scored = serializers.FloatField()
+    # convrate_scored = serializers.FloatField()
+    shots_conceded = serializers.IntegerField()
+    shotsot_conceded = serializers.IntegerField()
+    corners_conceded = serializers.IntegerField()
+    fouls_conceded = serializers.IntegerField()
+    yellow_conceded = serializers.IntegerField()
+    red_conceded = serializers.IntegerField()
+    # xgshot_conceded = serializers.FloatField()
+    # convrate_conceded = serializers.FloatField()
 
     class Meta:
         model = Match
@@ -105,4 +123,78 @@ class StatsSerializer(serializers.ModelSerializer):
             'xpoints',
             'xgscored',
             'xgconceded',
+            'nsxgscored',
+            'nsxgconceded',
+            'shots_scored',
+            'shotsot_scored',
+            'corners_scored',
+            'fouls_scored',
+            'yellow_scored',
+            'red_scored',
+            # 'xgshot_scored',
+            # 'convrate_scored',
+            'shots_conceded',
+            'shotsot_conceded',
+            'corners_conceded',
+            'fouls_conceded',
+            'yellow_conceded',
+            'red_conceded',
+            # 'xgshot_conceded',
+            # 'convrate_conceded'
+        )
+
+
+class StatsWeightedSerializer(serializers.ModelSerializer):
+    points = serializers.FloatField()
+    scored = serializers.FloatField()
+    conceded = serializers.FloatField()
+    xpoints = serializers.FloatField()
+    xgscored = serializers.FloatField()
+    xgconceded = serializers.FloatField()
+    nsxgscored = serializers.FloatField()
+    nsxgconceded = serializers.FloatField()
+    shots_scored = serializers.FloatField()
+    shotsot_scored = serializers.FloatField()
+    corners_scored = serializers.FloatField()
+    fouls_scored = serializers.FloatField()
+    yellow_scored = serializers.FloatField()
+    red_scored = serializers.FloatField()
+    # xgshot_scored = serializers.FloatField()
+    # convrate_scored = serializers.FloatField()
+    shots_conceded = serializers.FloatField()
+    shotsot_conceded = serializers.FloatField()
+    corners_conceded = serializers.FloatField()
+    fouls_conceded = serializers.FloatField()
+    yellow_conceded = serializers.FloatField()
+    red_conceded = serializers.FloatField()
+    # xgshot_conceded = serializers.FloatField()
+    # convrate_conceded = serializers.FloatField()
+
+    class Meta:
+        model = Match
+        fields = (
+            'points',
+            'scored',
+            'conceded',
+            'xpoints',
+            'xgscored',
+            'xgconceded',
+            'nsxgscored',
+            'nsxgconceded',
+            'shots_scored',
+            'shotsot_scored',
+            'corners_scored',
+            'fouls_scored',
+            'yellow_scored',
+            'red_scored',
+            # 'xgshot_scored',
+            # 'convrate_scored',
+            'shots_conceded',
+            'shotsot_conceded',
+            'corners_conceded',
+            'fouls_conceded',
+            'yellow_conceded',
+            'red_conceded',
+            # 'xgshot_conceded',
+            # 'convrate_conceded'
         )
