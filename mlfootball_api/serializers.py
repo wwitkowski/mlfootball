@@ -198,3 +198,21 @@ class StatsWeightedSerializer(serializers.ModelSerializer):
             # 'xgshot_conceded',
             # 'convrate_conceded'
         )
+
+
+class SimilarRatingSerializer(serializers.ModelSerializer):
+    win = serializers.FloatField()
+    draw = serializers.FloatField()
+    loss = serializers.FloatField()
+    avg_score1 = serializers.FloatField()
+    avg_score2 = serializers.FloatField()
+
+    class Meta:
+        model = Match
+        fields = (
+            'win',
+            'draw',
+            'loss',
+            'avg_score1',
+            'avg_score2'
+        )

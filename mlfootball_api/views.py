@@ -1,12 +1,14 @@
-import collections
+import numpy as np
 from django.shortcuts import render
 from django.db.models import Q, Avg, Count, Min, Sum, F, Case, When, Value
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.decorators import api_view
 from rest_framework import generics
 from .serializers import *
 from .models import Match
+from .ml_models import NearestNeighborsGoals
 
 
 # Create your views here.
@@ -391,3 +393,36 @@ class TeamStatsWeight(APIView):
         return Response(result)
 
 
+@api_view(['POST'])
+def similar(request):
+    stats = list(request.data.values())
+    past_data = Match.objects.exclude(ftr='').values_list('spi1', 'spi2')
+    past_data_ratings = past_data.values_list('spi1', 'spi2')
+
+    neigh = NearestNeighborsGoals(n=10)
+    idx = neigh.find(stats=np.array(stats), data=past_data)
+
+    result = Match.objects.filter(id__in=idx.tolist()[0]).aggregate(
+        win=Sum(Case(
+            When(ftr=Value('H'), then=1),
+            default=0
+        )),
+        draw=Sum(Case(
+            When(ftr=Value('D'), then=1),
+            default=0
+        )),
+        loss=Sum(Case(
+            When(ftr=Value('A'), then=1),
+            default=0
+        )),   
+        avg_score1 = Avg('score1'),
+        avg_score2 = Avg('score2')
+    )
+
+    serializer = SimilarRatingSerializer(result)
+
+    return Response({
+        'request': request.data,
+        'found': idx.tolist()[0],
+        'response': serializer.data
+    })
