@@ -1,4 +1,5 @@
 import numpy as np
+import joblib
 from django.db.models import Avg, Count, Sum, F, Case, When, Value
 
 from rest_framework.views import APIView
@@ -6,7 +7,8 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from .serializers import *
 from .models import Match
-from .ml_models import NearestNeighborsGoals
+from .ml_models import NearestNeighborsGoals, NeuralNetworkModel, FootballPoissonModel
+
 
 
 # Create your views here.
@@ -421,3 +423,19 @@ def similar(request):
         'request': request.data,
         'response': serializer.data,
     })
+
+
+@api_view(['POST'])
+def similar(request):
+    features = list(request.data.values())
+
+    scaler = joblib.load('predictors/scaler.pk1')
+    scaled = scaler.transform(features)
+
+
+    return Response({
+        'request': request.data,
+        'response': scaled,
+    })
+
+
