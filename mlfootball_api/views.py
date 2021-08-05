@@ -426,16 +426,35 @@ def similar(request):
 
 
 @api_view(['POST'])
-def similar(request):
-    features = list(request.data.values())
+def neuralnet_predict(request):
+    # features = np.array(list(request.data.values()))
+    features = np.array(list(request.data.values()))
 
-    scaler = joblib.load('predictors/scaler.pk1')
-    scaled = scaler.transform(features)
+    home_stats = {key: float(value) for key, value in request.data.items() if 'home' in key or 'score1' in key}
+    away_stats = {key: float(value) for key, value in request.data.items() if 'away' in key or 'score2' in key}
+    home_diff_names = ['importance_home', 'shotsot1_home', 'shotsot2_home', 'corners1_home', 'corners2_home']
+    away_diff_names = ['importance_away', 'shotsot1_away', 'shotsot2_away', 'corners1_away', 'corners2_away']
+    home_stats_list = [value for key, value in home_stats.items() if key in home_diff_names]
+    away_stats_list = [value for key, value in away_stats.items() if key in away_diff_names] 
+    home_diff_list = [home_stats_list[i] - away_stats_list[i] for i in range(len(home_stats_list))]
+    away_diff_list = [away_stats_list[i] - home_stats_list[i] for i in range(len(away_stats_list))]
+    home_features = [home_stats['adj_avg_xg1_home'], away_stats['adj_avg_xg2_away'], home_stats['score1_similar']] + home_diff_list
+    away_features = [away_stats['adj_avg_xg1_away'], home_stats['adj_avg_xg2_home'], away_stats['score2_similar']] + away_diff_list
+
+
+    scaler = joblib.load('mlfootball_api/predictors/scaler.pkl')
+    neuralnet_model = NeuralNetworkModel(path='mlfootball_api/predictors/NeuralNet_mae.hdf5')
+
+    home_scaled = scaler.transform(np.array(home_features).reshape(1, -1))
+    home_score = neuralnet_model.predict(home_scaled)
+    away_scaled = scaler.transform(np.array(away_features).reshape(1, -1))
+    away_score = neuralnet_model.predict(away_scaled)
 
 
     return Response({
         'request': request.data,
-        'response': scaled,
+        'home_score': home_score,
+        'away_score': away_score
     })
 
 

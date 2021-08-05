@@ -1,5 +1,8 @@
+import pandas as pd
+import tensorflow as tf
+import statsmodels.api as sm
+import statsmodels.formula.api as smf
 from sklearn.neighbors import NearestNeighbors
-
 
 class NearestNeighborsGoals:
     def __init__(self, n=100):
@@ -56,12 +59,12 @@ class FootballPoissonModel():
 		
 
 class NeuralNetworkModel():
-	def __init__(self, n_features=None, name=None, activations=('relu', 'relu'), nodes=(50, 50), batch_size=256, dropout=None, optimizer='adam', loss='mse', metrics=['mse'], bias=None):
-		self.name = name
+	def __init__(self, n_features=None, path=None, activations=('relu', 'relu'), nodes=(50, 50), batch_size=256, dropout=None, optimizer='adam', loss='mse', metrics=['mse'], bias=None):
+		self.path = path
 		self.batch_size = batch_size
 
-		if self.name is not None:
-			self.model = tf.keras.models.load_model(f'models\\{self.name}.hdf5')
+		if self.path is not None:
+			self.model = tf.keras.models.load_model(self.path)
 		else:
 			self._build(n_features=n_features, activations=activations, nodes=nodes, dropout=dropout, optimizer=optimizer, loss=loss, metrics=metrics, bias=bias)
 
