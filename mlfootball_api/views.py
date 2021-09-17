@@ -1,6 +1,6 @@
 import numpy as np
 import joblib
-from django.db.models import Avg, Count, Sum, F, Case, When, Value
+from django.db.models import Avg, Count, Sum, Max, F, Q, Case, When, Value
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -393,6 +393,15 @@ class TeamStatsWeight(APIView):
         return Response(result)
 
 
+class LastUpdated(APIView):
+    def get(self, request, format=None):
+        queryset = Match.objects.filter(~Q(score1__isnull=True)).aggregate(
+            last_updated=Max('date')
+        )  
+        date_serializer = DateSerializer(queryset)
+        return Response(date_serializer.data)
+
+
 @api_view(['POST'])
 def similar(request):
     stats = list(request.data.values())
@@ -450,11 +459,22 @@ def neuralnet_predict(request):
     away_scaled = scaler.transform(np.array(away_features).reshape(1, -1))
     away_score = neuralnet_model.predict(away_scaled)
 
+    foot_poisson = FootballPoissonModel()
+    home_win, draw, away_win = foot_poisson.predict_chances(home_score, away_score)
+    over, under = foot_poisson.predict_overs(home_score, away_score)
+
 
     return Response({
         'request': request.data,
         'home_score': home_score,
-        'away_score': away_score
+        'away_score': away_score,
+        'home_win': home_win,
+        'draw': draw,
+        'away_win': away_win,
+        'over': over,
+        'under': under,
+        #'btts_yes':
+        #'btts_no': 
     })
 
 

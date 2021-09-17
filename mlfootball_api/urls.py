@@ -10,5 +10,6 @@ urlpatterns = [
     re_path(r'^teams/stats/total/$', TeamStatsTotal.as_view()),
     re_path(r'^teams/stats/weighted/$', TeamStatsWeight.as_view()),
     path('predictions/similar/', similar),
-    path('predictions/neuralnet/', neuralnet_predict)
+    path('predictions/neuralnet/', neuralnet_predict),
+    path('lastupdate/', LastUpdated.as_view())
 ]

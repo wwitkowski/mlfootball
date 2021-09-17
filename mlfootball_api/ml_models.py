@@ -1,8 +1,10 @@
 import pandas as pd
+import numpy as np
 import tensorflow as tf
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
 from sklearn.neighbors import NearestNeighbors
+from tensorflow.python.lib.io.file_io import stat
 
 class NearestNeighborsGoals:
     def __init__(self, n=100):
@@ -56,6 +58,15 @@ class FootballPoissonModel():
 		match_pred = [[np.outer(np.array([i[j] for i in team_pred[0]]), np.array([i[j] for i in team_pred[1]]))] for j in range(0, np.shape(team_pred)[2])]
 		res = [[np.sum(np.triu(np.fliplr(match_pred[i]), -7)), np.sum(np.tril(np.fliplr(match_pred[i]), -8))] for i in range(0, len(match_pred))]
 		return zip(*res)
+
+	@staticmethod
+	def predict_btts(home_goals, away_goals, max_goals=10):
+		team_pred = [[poisson.pmf(i, team_avg) for i in range(0, max_goals + 1)] for team_avg in [home_goals, away_goals]]
+		match_pred = [[np.outer(np.array([i[j] for i in team_pred[0]]), np.array([i[j] for i in team_pred[1]]))] for j in range(0, np.shape(team_pred)[2])]
+		#res = [[np.sum(match_pred[i]), -7)), np.sum(np.tril(np.fliplr(match_pred[i]), -8))] for i in range(0, len(match_pred))]
+
+		return 1
+
 		
 
 class NeuralNetworkModel():

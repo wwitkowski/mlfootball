@@ -16,6 +16,16 @@ class MatchSerializer(serializers.ModelSerializer):
         )
 
 
+class DateSerializer(serializers.ModelSerializer):
+    last_updated = serializers.DateField()
+
+    class Meta:
+        model = Match
+        fields = (
+            'last_updated',
+        )
+
+
 class MatchStatsSeriazlier(serializers.ModelSerializer):
     rating = serializers.FloatField()
     importance = serializers.FloatField()

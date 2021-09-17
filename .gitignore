@@ -2,3 +2,4 @@
 /db.sqlite3
 /football_api/settings.py
 mlfootball_api/predictors/*
+mlfootball_api/mapping.csv
