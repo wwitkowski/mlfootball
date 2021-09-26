@@ -1,8 +1,8 @@
-from django.urls import path
-from django.views.generic import TemplateView
-
-app_name = 'mlfootball'
+from django.contrib import admin
+from django.urls import path, include
 
 urlpatterns = [
-    path('', TemplateView.as_view(template_name="mlfootball/index.html"))
+    path('admin/', admin.site.urls),
+    path('', include('mlfootball.urls', namespace='mlfootball')),
+    path('api/', include('mlfootball_api.urls', namespace='mlfootball_api'))
 ]
