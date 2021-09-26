@@ -1,7 +1,11 @@
 import numpy as np
 import joblib
+from datetime import datetime
 from django.db.models import Avg, Count, Sum, Max, F, Q, Case, When, Value
+from numpy.lib.function_base import delete
 
+from rest_framework import status
+from rest_framework import generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
@@ -18,10 +22,19 @@ class MatchList(APIView):
         serializer = MatchSerializer(queryset, many=True)
         return Response(serializer.data)
 
+    def delete(self, request, date, format=None):
+        queryset = Match.objects.filter(date__gt=date)
+        cnt = len(queryset)
+        queryset.delete()
+        return Response({
+            'status': status.HTTP_204_NO_CONTENT,
+            'count': cnt
+        })
+
 
 class MatchStats(APIView):
-    def get(self, *args, **kwargs):
-        match_queryset = Match.objects.filter(id=self.kwargs['match_id'])
+    def get(self, request, match_id, format=None):
+        match_queryset = Match.objects.filter(id=match_id)
         home_stats_queryset = match_queryset.annotate(
             rating=F('spi1'),
             importance=F('importance1'),
@@ -50,7 +63,6 @@ class MatchStats(APIView):
             xpts=F('xpts2'),
             xg_shot=F('xgshot2'),
         )
-
         match_serializer = MatchSerializer(match_queryset[0])
         home_stats_serializer = MatchStatsSeriazlier(home_stats_queryset[0])
         away_stats_serializer = MatchStatsSeriazlier(away_stats_queryset[0])      
@@ -59,8 +71,17 @@ class MatchStats(APIView):
             'home': home_stats_serializer.data,
             'away': away_stats_serializer.data
         }
-
         return Response(result)
+
+    
+class MatchCreate(APIView):    
+    def post(self, request, format=None):
+        serializer = BaseMatchSerializer(data=request.data, many=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
 
 
 class Standings(APIView):
@@ -72,7 +93,7 @@ class Standings(APIView):
         teams_queryset = Match.objects.filter(league_id=league_id, season=season) \
             .values('team1') \
             .annotate(name=F('team1')).distinct()
-        home_stats_queryset = Match.objects.filter(league_id=league_id, season=season) \
+        home_stats_queryset = Match.objects.filter(~Q(score1__isnull=True), league_id=league_id, season=season) \
             .values('team1') \
             .annotate(
                 played=Count('team1'),
@@ -95,7 +116,7 @@ class Standings(APIView):
                 xgscored=Sum('xg1'),
                 xgconceded=Sum('xg2')
             )
-        away_stats_queryset = Match.objects.filter(league_id=league_id, season=season) \
+        away_stats_queryset = Match.objects.filter(~Q(score1__isnull=True), league_id=league_id, season=season) \
             .values('team2') \
             .annotate(
                 played=Count('team2'),
@@ -148,7 +169,7 @@ class TeamStatsTotal(APIView):
         team_queryset = Match.objects.filter(league_id=league_id, season=season, team1=team_name) \
         .values('team1') \
         .annotate(name=F('team1')).distinct()
-        home_stats_queryset = Match.objects.filter(league_id=league_id, season=season, team1=team_name) \
+        home_stats_queryset = Match.objects.filter(~Q(score1__isnull=True), league_id=league_id, season=season, team1=team_name) \
             .values('team1') \
             .annotate(
                 played=Count('team1'),
@@ -177,7 +198,7 @@ class TeamStatsTotal(APIView):
                 #xgshot_conceded=Sum('xg2')/Sum('shots2'),
                 #convrate_conceded=Sum('score2')/Sum('shots2'),
             )
-        away_stats_queryset = Match.objects.filter(league_id=league_id, season=season, team1=team_name) \
+        away_stats_queryset = Match.objects.filter(~Q(score1__isnull=True), league_id=league_id, season=season, team2=team_name) \
             .values('team2') \
             .annotate(
                 played=Count('team2'),
@@ -233,31 +254,32 @@ class TeamStatsWeight(APIView):
         .annotate(name=F('team1')).distinct()
         query_home = ''' 
             SELECT 1 id, team1,
-            Sum(pts1*weight)/Sum(weight) AS points,
-            Sum(score1*weight)/Sum(weight) AS scored,
-            Sum(score2*weight)/Sum(weight) AS conceded,
-            Sum(xpts1*weight)/Sum(weight) AS xpoints,
-            Sum(xg1*weight)/Sum(weight) AS xgscored,
-            Sum(xg2*weight)/Sum(weight) AS xgconceded,
-            Sum(nsxg1*weight)/Sum(weight) AS nsxgscored,
-            Sum(nsxg2*weight)/Sum(weight) AS nsxgconceded,
-            Sum(shots1*weight)/Sum(weight) AS shots_scored,
-            Sum(shotsot1*weight)/Sum(weight) AS shotsot_scored,
-            Sum(corners1*weight)/Sum(weight) AS corners_scored,
-            Sum(fouls1*weight)/Sum(weight) AS fouls_scored,
-            Sum(yellow1*weight)/Sum(weight) AS yellow_scored,
-            Sum(red1*weight)/Sum(weight) AS red_scored,
-            Sum(shots2*weight)/Sum(weight) AS shots_conceded,
-            Sum(shotsot2*weight)/Sum(weight) AS shotsot_conceded,
-            Sum(corners2*weight)/Sum(weight) AS corners_conceded,
-            Sum(fouls2*weight)/Sum(weight) AS fouls_conceded,
-            Sum(yellow2*weight)/Sum(weight) AS yellow_conceded,
-            Sum(red2*weight)/Sum(weight) AS red_conceded
+            Sum(pts1*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS points,
+            Sum(score1*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS scored,
+            Sum(score2*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS conceded,
+            Sum(xpts1*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS xpoints,
+            Sum(xg1*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS xgscored,
+            Sum(xg2*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS xgconceded,
+            Sum(nsxg1*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS nsxgscored,
+            Sum(nsxg2*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS nsxgconceded,
+            Sum(shots1*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS shots_scored,
+            Sum(shotsot1*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS shotsot_scored,
+            Sum(corners1*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS corners_scored,
+            Sum(fouls1*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS fouls_scored,
+            Sum(yellow1*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS yellow_scored,
+            Sum(red1*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS red_scored,
+            Sum(shots2*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS shots_conceded,
+            Sum(shotsot2*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS shotsot_conceded,
+            Sum(corners2*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS corners_conceded,
+            Sum(fouls2*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS fouls_conceded,
+            Sum(yellow2*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS yellow_conceded,
+            Sum(red2*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS red_conceded
             from matches m
             INNER JOIN (
                 SELECT id from matches
                 where league_id = %s
                 and team1 = %s
+                and ftr <> ''
                 ORDER BY id DESC
                 LIMIT %s) last ON m.id = last.id
             GROUP BY team1
@@ -265,31 +287,32 @@ class TeamStatsWeight(APIView):
         home_stats_queryset = Match.objects.raw(query_home, params=[league_id, team_name, count])
         query_away = ''' 
             SELECT 1 id, team2,
-            Sum(pts2*weight)/Sum(weight) AS points,
-            Sum(score2*weight)/Sum(weight) AS scored,
-            Sum(score1*weight)/Sum(weight) AS conceded,
-            Sum(xpts2*weight)/Sum(weight) AS xpoints,
-            Sum(xg2*weight)/Sum(weight) AS xgscored,
-            Sum(xg1*weight)/Sum(weight) AS xgconceded,
-            Sum(nsxg2*weight)/Sum(weight) AS nsxgscored,
-            Sum(nsxg1*weight)/Sum(weight) AS nsxgconceded,
-            Sum(shots2*weight)/Sum(weight) AS shots_scored,
-            Sum(shotsot2*weight)/Sum(weight) AS shotsot_scored,
-            Sum(corners2*weight)/Sum(weight) AS corners_scored,
-            Sum(fouls2*weight)/Sum(weight) AS fouls_scored,
-            Sum(yellow2*weight)/Sum(weight) AS yellow_scored,
-            Sum(red2*weight)/Sum(weight) AS red_scored,
-            Sum(shots1*weight)/Sum(weight) AS shots_conceded,
-            Sum(shotsot1*weight)/Sum(weight) AS shotsot_conceded,
-            Sum(corners1*weight)/Sum(weight) AS corners_conceded,
-            Sum(fouls1*weight)/Sum(weight) AS fouls_conceded,
-            Sum(yellow1*weight)/Sum(weight) AS yellow_conceded,
-            Sum(red1*weight)/Sum(weight) AS red_conceded
+            Sum(pts2*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS points,
+            Sum(score2*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS scored,
+            Sum(score1*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS conceded,
+            Sum(xpts2*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS xpoints,
+            Sum(xg2*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS xgscored,
+            Sum(xg1*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS xgconceded,
+            Sum(nsxg2*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS nsxgscored,
+            Sum(nsxg1*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS nsxgconceded,
+            Sum(shots2*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS shots_scored,
+            Sum(shotsot2*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS shotsot_scored,
+            Sum(corners2*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS corners_scored,
+            Sum(fouls2*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS fouls_scored,
+            Sum(yellow2*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS yellow_scored,
+            Sum(red2*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS red_scored,
+            Sum(shots1*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS shots_conceded,
+            Sum(shotsot1*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS shotsot_conceded,
+            Sum(corners1*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS corners_conceded,
+            Sum(fouls1*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS fouls_conceded,
+            Sum(yellow1*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS yellow_conceded,
+            Sum(red1*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS red_conceded
             from matches m
             INNER JOIN (
                 SELECT id from matches
                 where league_id = %s
                 and team2 = %s
+                and ftr <> ''
                 ORDER BY id DESC
                 LIMIT %s) last ON m.id = last.id
             GROUP BY team2
@@ -298,29 +321,29 @@ class TeamStatsWeight(APIView):
 
         query_total = '''
         SELECT 1 id, team1,
-        Sum(pts1*weight)/Sum(weight) AS points,
-        Sum(score1*weight)/Sum(weight) AS scored,
-        Sum(score2*weight)/Sum(weight) AS conceded,
-        Sum(xpts1*weight)/Sum(weight) AS xpoints,
-        Sum(xg1*weight)/Sum(weight) AS xgscored,
-        Sum(xg2*weight)/Sum(weight) AS xgconceded,
-        Sum(nsxg1*weight)/Sum(weight) AS nsxgscored,
-        Sum(nsxg2*weight)/Sum(weight) AS nsxgconceded,
-        Sum(shots1*weight)/Sum(weight) AS shots_scored,
-        Sum(shotsot1*weight)/Sum(weight) AS shotsot_scored,
-        Sum(corners1*weight)/Sum(weight) AS corners_scored,
-        Sum(fouls1*weight)/Sum(weight) AS fouls_scored,
-        Sum(yellow1*weight)/Sum(weight) AS yellow_scored,
-        Sum(red1*weight)/Sum(weight) AS red_scored,
-        Sum(shots2*weight)/Sum(weight) AS shots_conceded,
-        Sum(shotsot2*weight)/Sum(weight) AS shotsot_conceded,
-        Sum(corners2*weight)/Sum(weight) AS corners_conceded,
-        Sum(fouls2*weight)/Sum(weight) AS fouls_conceded,
-        Sum(yellow2*weight)/Sum(weight) AS yellow_conceded,
-        Sum(red2*weight)/Sum(weight) AS red_conceded	
+        Sum(pts1*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS points,
+        Sum(score1*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS scored,
+        Sum(score2*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS conceded,
+        Sum(xpts1*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS xpoints,
+        Sum(xg1*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS xgscored,
+        Sum(xg2*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS xgconceded,
+        Sum(nsxg1*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS nsxgscored,
+        Sum(nsxg2*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS nsxgconceded,
+        Sum(shots1*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS shots_scored,
+        Sum(shotsot1*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS shotsot_scored,
+        Sum(corners1*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS corners_scored,
+        Sum(fouls1*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS fouls_scored,
+        Sum(yellow1*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS yellow_scored,
+        Sum(red1*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS red_scored,
+        Sum(shots2*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS shots_conceded,
+        Sum(shotsot2*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS shotsot_conceded,
+        Sum(corners2*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS corners_conceded,
+        Sum(fouls2*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS fouls_conceded,
+        Sum(yellow2*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS yellow_conceded,
+        Sum(red2*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS red_conceded	
         FROM (
             (SELECT id,
-            weight,
+            date,
             team1,
             pts1,
             score1,
@@ -344,10 +367,11 @@ class TeamStatsWeight(APIView):
             red2
             from matches
             where league_id = %s
-            and team1 = %s)
+            and team1 = %s
+            and ftr <> '')
             UNION
             (SELECT id,
-            weight,
+            date,
             team2 as team1, 
             pts2 as pts1,
             score2 as score1,
@@ -372,6 +396,7 @@ class TeamStatsWeight(APIView):
             from matches
             where league_id = %s
             and team2 = %s
+            and ftr <> ''
             )
             ORDER BY ID DESC
             LIMIT %s) m
@@ -395,7 +420,7 @@ class TeamStatsWeight(APIView):
 
 class LastUpdated(APIView):
     def get(self, request, format=None):
-        queryset = Match.objects.filter(~Q(score1__isnull=True)).aggregate(
+        queryset = Match.objects.exclude(ftr='').exclude(ftr__isnull=True).aggregate(
             last_updated=Max('date')
         )  
         date_serializer = DateSerializer(queryset)

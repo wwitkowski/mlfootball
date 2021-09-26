@@ -123,7 +123,7 @@ class DjangoSession(models.Model):
 
 
 class Match(models.Model):
-    id = models.IntegerField(primary_key=True)
+    id = models.AutoField(primary_key=True)
     season = models.CharField(max_length=4, blank=True, null=True)
     date = models.DateField(blank=True, null=True)
     league_id = models.IntegerField(blank=True, null=True)
@@ -189,7 +189,6 @@ class Match(models.Model):
     cards2 = models.FloatField(blank=True, null=True)
     matchday_home = models.FloatField(blank=True, null=True)
     matchday_away = models.FloatField(blank=True, null=True)
-    weight = models.FloatField(blank=True, null=True)
 
 
     class Meta:

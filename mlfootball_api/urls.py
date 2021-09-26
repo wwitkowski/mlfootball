@@ -4,6 +4,7 @@ from .views import *
 app_name = 'mlfootball_api'
 
 urlpatterns = [
+    path('matches/', MatchCreate.as_view()),
     path('matches/<int:match_id>/', MatchStats.as_view()),
     path('matches/<str:date>/', MatchList.as_view()),
     re_path(r'^standings/$', Standings.as_view()),

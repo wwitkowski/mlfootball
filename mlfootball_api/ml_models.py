@@ -4,6 +4,7 @@ import tensorflow as tf
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
 from sklearn.neighbors import NearestNeighbors
+from scipy.stats import poisson, skellam
 from tensorflow.python.lib.io.file_io import stat
 
 class NearestNeighborsGoals:
