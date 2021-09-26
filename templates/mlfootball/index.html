@@ -1,1 +1,16 @@
-//homepage
+<!doctype html>
+<html>
+<head>
+    <title>MLFootball </title>
+</head>
+<body>
+    {% for league, matches in match_list %}
+        <p>{{ league }}</p>
+        <ul>
+        {% for match in matches %}
+            <li><a href='/{{ match.id }}/'>{{ match.team1 }} - {{ match.team2 }}</a></li>
+        {% endfor %}
+        </ul>
+    {% endfor %}
+</body>
+</html>
