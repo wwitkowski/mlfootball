@@ -123,7 +123,7 @@ class DjangoSession(models.Model):
 
 
 class Match(models.Model):
-    id = models.IntegerField(primary_key=True)
+    id = models.AutoField(primary_key=True)
     season = models.CharField(max_length=4, blank=True, null=True)
     date = models.DateField(blank=True, null=True)
     league_id = models.IntegerField(blank=True, null=True)
@@ -147,8 +147,6 @@ class Match(models.Model):
     nsxg2 = models.FloatField(blank=True, null=True)
     adj_score1 = models.FloatField(blank=True, null=True)
     adj_score2 = models.FloatField(blank=True, null=True)
-    hometeam_merged = models.CharField(max_length=24, blank=True, null=True)  # Field name made lowercase.
-    awayteam_merged = models.CharField(max_length=24, blank=True, null=True)  # Field name made lowercase.
     ftr = models.CharField(db_column='FTR', max_length=1, blank=True, null=True)  # Field name made lowercase.
     shots1 = models.FloatField(blank=True, null=True)
     shots2 = models.FloatField(blank=True, null=True)
@@ -191,7 +189,6 @@ class Match(models.Model):
     cards2 = models.FloatField(blank=True, null=True)
     matchday_home = models.FloatField(blank=True, null=True)
     matchday_away = models.FloatField(blank=True, null=True)
-    weight = models.FloatField(blank=True, null=True)
 
 
     class Meta:

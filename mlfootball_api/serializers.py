@@ -1,6 +1,13 @@
 from rest_framework import serializers
 from .models import Match
 
+
+class BaseMatchSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Match
+        fields = '__all__'
+
+
 class MatchSerializer(serializers.ModelSerializer):
     class Meta:
         model = Match
@@ -13,6 +20,16 @@ class MatchSerializer(serializers.ModelSerializer):
             'score1',
             'score2',
             'ftr'
+        )
+
+
+class DateSerializer(serializers.ModelSerializer):
+    last_updated = serializers.DateField()
+
+    class Meta:
+        model = Match
+        fields = (
+            'last_updated',
         )
 
 
