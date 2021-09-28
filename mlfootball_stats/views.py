@@ -18,12 +18,15 @@ def home_view(request):
         'match_list': [(key, list(value)) for key, value in groupby(matches, key_func)]
     }
     
-    return render(request, 'mlfootball/index.html', context)
+    return render(request, 'mlfootball_stats/home.html', context)
 
 
 def match_stats_view(request, match_id):
+    context = {
+        'match_id': match_id
+    }
     
-    return HttpResponse(f'<p>{match_id}</p>')
+    return render(request, 'mlfootball_stats/stats_dashboard.html', context)
 
 
 
