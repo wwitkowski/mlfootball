@@ -1,9 +1,5 @@
-<!doctype html>
-<html>
-<head>
-    <title>MLFootball </title>
-</head>
-<body>
+{% extends 'mlfootball_stats/base.html' %}
+{% block content %}
     {% for league, matches in match_list %}
         <p>{{ league }}</p>
         <ul>
@@ -12,5 +8,4 @@
         {% endfor %}
         </ul>
     {% endfor %}
-</body>
-</html>
+{% endblock %}
