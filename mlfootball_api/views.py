@@ -5,7 +5,6 @@ from django.db.models import Avg, Count, Sum, Max, F, Q, Case, When, Value
 from numpy.lib.function_base import delete
 
 from rest_framework import status
-from rest_framework import generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
@@ -17,6 +16,7 @@ from .ml_models import NearestNeighborsGoals, NeuralNetworkModel, FootballPoisso
 
 # Create your views here.
 class MatchList(APIView):
+
     def get(self, request, date, format=None):
         queryset = Match.objects.filter(date=date)
         serializer = MatchSerializer(queryset, many=True)
