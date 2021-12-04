@@ -36,6 +36,7 @@ class MatchStats(APIView):
     def get(self, request, match_id, format=None):
         match_queryset = Match.objects.filter(id=match_id)
         home_stats_queryset = match_queryset.annotate(
+            team=F('team1'),
             rating=F('spi1'),
             importance=F('importance1'),
             xg=F('xg1'),
@@ -50,6 +51,7 @@ class MatchStats(APIView):
             xg_shot=F('xgshot1'),
         )
         away_stats_queryset = match_queryset.annotate(
+            team=F('team2'),
             rating=F('spi2'),
             importance=F('importance2'),
             xg=F('xg2'),
@@ -114,7 +116,11 @@ class Standings(APIView):
                 conceded=Sum('score2'),
                 xpoints=Sum('xpts1'),
                 xgscored=Sum('xg1'),
-                xgconceded=Sum('xg2')
+                xgconceded=Sum('xg2'),
+                shots_scored=Sum('shots1'),
+                shots_conceded=Sum('shots2'),
+                xgshot_scored=Sum('xgshot1'),
+                xgshot_conceded=Sum('xgshot2')
             )
         away_stats_queryset = Match.objects.filter(~Q(score1__isnull=True), league_id=league_id, season=season) \
             .values('team2') \
@@ -137,7 +143,9 @@ class Standings(APIView):
                 conceded=Sum('score1'),
                 xpoints=Sum('xpts2'),
                 xgscored=Sum('xg2'),
-                xgconceded=Sum('xg1')
+                xgconceded=Sum('xg1'),
+                shots_scored=Sum('shots2'),
+                shots_conceded=Sum('shots1')
             )
         
         for team in teams_queryset:
@@ -262,6 +270,8 @@ class TeamStatsWeight(APIView):
             Sum(xg2*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS xgconceded,
             Sum(nsxg1*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS nsxgscored,
             Sum(nsxg2*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS nsxgconceded,
+            Sum(adj_avg_xg1*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS adj_avg_xgscored,
+            Sum(adj_avg_xg2*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS adj_avg_xgconceded,
             Sum(shots1*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS shots_scored,
             Sum(shotsot1*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS shotsot_scored,
             Sum(corners1*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS corners_scored,
@@ -295,6 +305,8 @@ class TeamStatsWeight(APIView):
             Sum(xg1*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS xgconceded,
             Sum(nsxg2*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS nsxgscored,
             Sum(nsxg1*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS nsxgconceded,
+            Sum(adj_avg_xg2*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS adj_avg_xgscored,
+            Sum(adj_avg_xg1*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS adj_avg_xgconceded,
             Sum(shots2*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS shots_scored,
             Sum(shotsot2*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS shotsot_scored,
             Sum(corners2*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS corners_scored,
@@ -327,6 +339,8 @@ class TeamStatsWeight(APIView):
         Sum(xpts1*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS xpoints,
         Sum(xg1*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS xgscored,
         Sum(xg2*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS xgconceded,
+        Sum(adj_avg_xg1*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS adj_avg_xgscored,
+        Sum(adj_avg_xg2*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS adj_avg_xgconceded,
         Sum(nsxg1*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS nsxgscored,
         Sum(nsxg2*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS nsxgconceded,
         Sum(shots1*EXP(-1*0.00325*DATEDIFF(CURDATE(),date)))/Sum(EXP(-1*0.00325*DATEDIFF(CURDATE(),date))) AS shots_scored,
@@ -351,6 +365,8 @@ class TeamStatsWeight(APIView):
             xpts1,
             xg1,
             xg2,
+            adj_avg_xg1,
+            adj_avg_xg2,
             nsxg1,
             nsxg2,
             shots1,
@@ -379,6 +395,8 @@ class TeamStatsWeight(APIView):
             xpts2 as xpts1,
             xg2 as xg1,
             xg1 as xg2,
+            adj_avg_xg2 as adj_avg_xg1,
+            adj_avg_xg1 as adj_avg_xg2,
             nsxg2 as nsxg1,
             nsxg1 as nsxg2,
             shots2 as shots1,
@@ -430,13 +448,13 @@ class LastUpdated(APIView):
 @api_view(['POST'])
 def similar(request):
     stats = list(request.data.values())
-    past_data = Match.objects.exclude(ftr='')
+    past_data = Match.objects.exclude(ftr='').exclude(ftr__isnull=True)
     past_data_ratings = past_data.values_list('spi1', 'spi2')
-    neigh = NearestNeighborsGoals(n=100)
+    neigh = NearestNeighborsGoals(n=100, radius=2)
     indices = neigh.find(stats=np.array(stats), data=past_data_ratings)
     id_list = np.array(past_data.values_list('id', flat=True))
-    result = Match.objects.filter(id__in=id_list[indices].tolist()[0]).aggregate(
-        win=Avg(Case(
+    result = Match.objects.filter(id__in=id_list[indices].tolist()).aggregate(
+        home_win=Avg(Case(
             When(ftr=Value('H'), then=1),
             default=0
         )),
@@ -444,7 +462,7 @@ def similar(request):
             When(ftr=Value('D'), then=1),
             default=0
         )),
-        loss=Avg(Case(
+        away_win=Avg(Case(
             When(ftr=Value('A'), then=1),
             default=0
         )),   
@@ -455,6 +473,8 @@ def similar(request):
 
     return Response({
         'request': request.data,
+        'count': len(indices),
+        'ids': id_list[indices].tolist(),
         'response': serializer.data,
     })
 

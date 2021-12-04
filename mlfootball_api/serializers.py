@@ -14,6 +14,8 @@ class MatchSerializer(serializers.ModelSerializer):
         fields = (
             'id',
             'date',
+            'season',
+            'league_id',
             'league',
             'team1',
             'team2',
@@ -34,6 +36,7 @@ class DateSerializer(serializers.ModelSerializer):
 
 
 class MatchStatsSeriazlier(serializers.ModelSerializer):
+    team = serializers.CharField()
     rating = serializers.FloatField()
     importance = serializers.FloatField()
     xg = serializers.FloatField()
@@ -50,6 +53,7 @@ class MatchStatsSeriazlier(serializers.ModelSerializer):
     class Meta:
         model = Match
         fields = (
+            'team',
             'rating',
             'importance',
             'xg',
@@ -86,7 +90,9 @@ class StatsStandingsSerializer(serializers.ModelSerializer):
     xpoints = serializers.FloatField()
     xgscored = serializers.FloatField()
     xgconceded = serializers.FloatField()
-
+    shots_scored = serializers.IntegerField()
+    shots_conceded = serializers.FloatField()
+    
     class Meta:
         model = Match
         fields = (
@@ -100,6 +106,8 @@ class StatsStandingsSerializer(serializers.ModelSerializer):
             'xpoints',
             'xgscored',
             'xgconceded',
+            'shots_scored',
+            "shots_conceded"
         )
 
 
@@ -135,12 +143,12 @@ class StatsTotalSerializer(serializers.ModelSerializer):
         fields = (
             'played',
             'points',
-            'scored',
-            'conceded',
             'xpoints',
+            'scored',
             'xgscored',
-            'xgconceded',
             'nsxgscored',
+            'conceded',
+            'xgconceded',
             'nsxgconceded',
             'shots_scored',
             'shotsot_scored',
@@ -168,6 +176,8 @@ class StatsWeightedSerializer(serializers.ModelSerializer):
     xpoints = serializers.FloatField()
     xgscored = serializers.FloatField()
     xgconceded = serializers.FloatField()
+    adj_avg_xgscored = serializers.FloatField()
+    adj_avg_xgconceded = serializers.FloatField()
     nsxgscored = serializers.FloatField()
     nsxgconceded = serializers.FloatField()
     shots_scored = serializers.FloatField()
@@ -198,6 +208,8 @@ class StatsWeightedSerializer(serializers.ModelSerializer):
             'xgconceded',
             'nsxgscored',
             'nsxgconceded',
+            'adj_avg_xgscored',
+            'adj_avg_xgconceded',
             'shots_scored',
             'shotsot_scored',
             'corners_scored',
@@ -218,18 +230,18 @@ class StatsWeightedSerializer(serializers.ModelSerializer):
 
 
 class SimilarRatingSerializer(serializers.ModelSerializer):
-    win = serializers.FloatField()
+    home_win = serializers.FloatField()
     draw = serializers.FloatField()
-    loss = serializers.FloatField()
+    away_win = serializers.FloatField()
     avg_score1 = serializers.FloatField()
     avg_score2 = serializers.FloatField()
 
     class Meta:
         model = Match
         fields = (
-            'win',
+            'home_win',
             'draw',
-            'loss',
+            'away_win',
             'avg_score1',
             'avg_score2'
         )
