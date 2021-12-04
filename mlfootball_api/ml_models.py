@@ -8,14 +8,20 @@ from scipy.stats import poisson, skellam
 from tensorflow.python.lib.io.file_io import stat
 
 class NearestNeighborsGoals:
-    def __init__(self, n=100):
-        self.nbrs = NearestNeighbors(n_neighbors=n, algorithm='ball_tree')
+    def __init__(self, n=100, radius=2):
+        self.n = n
+        self.radius = radius
+        self.nbrs = NearestNeighbors(n_neighbors=self.n, radius=self.radius, algorithm='ball_tree')
 
     
     def find(self, stats, data):
         self.nbrs.fit(data)
-        _, indices = self.nbrs.kneighbors(stats.reshape(1, -1))
-        return indices
+        radius_indices = self.nbrs.radius_neighbors(stats.reshape(1, -1), return_distance=False)
+        if len(radius_indices[0]) < self.n:
+            indices = self.nbrs.kneighbors(stats.reshape(1, -1), return_distance=False)
+            return indices[0]
+        else:
+            return radius_indices[0]
 
 
 class FootballPoissonModel():
