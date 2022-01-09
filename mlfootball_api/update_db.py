@@ -98,6 +98,7 @@ if __name__ == '__main__':
     leagues = ['E0', 'E1', 'D1', 'D2', 'I1', 'I2', 'F1', 'N1', 'SP1', 'P1', 'SP2']
     now = datetime.now().strftime('%y')
     season_now = f'{now}{int(now)+1}'
+    season_now = '2122'
     df_fd = pd.DataFrame()
     for league in leagues:
         source_fd = FootballData(season=season_now, league=league)

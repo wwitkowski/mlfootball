@@ -201,14 +201,14 @@ class StatsWeightedSerializer(serializers.ModelSerializer):
         model = Match
         fields = (
             'points',
-            'scored',
-            'conceded',
             'xpoints',
+            'scored',
             'xgscored',
-            'xgconceded',
             'nsxgscored',
-            'nsxgconceded',
             'adj_avg_xgscored',
+            'conceded',
+            'xgconceded',
+            'nsxgconceded',
             'adj_avg_xgconceded',
             'shots_scored',
             'shotsot_scored',
